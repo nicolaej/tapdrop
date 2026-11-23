@@ -50,8 +50,10 @@ These exist because the work touches someone's own watch and phone.
 | Path | What it is |
 |---|---|
 | `skill/tapdrop-watch/` | The setup procedure, `watch.py`, troubleshooting, and the bundled APK and pay page |
-| `watch-app/` | The app's source. Plain Java, Android framework classes only, no Gradle |
-| `watch-app/build.ps1` | Builds the APK on Windows and refreshes the copy in `skill/` |
+| `watch-app/` | The app's source. Plain Java, no Gradle. Android framework classes, plus AndroidX Tiles for the tile |
+| `watch-app/build.ps1`, `build.sh` | Build the APK on Windows, or on macOS and Linux, and refresh the copy in `skill/` |
+| `watch-app/libraries.txt` | The pinned AndroidX libraries and their SHA-256, read by both build scripts |
+| `watch-app/proguard.pro` | R8 rules for shrinking those libraries. Code reached only by reflection needs a rule here |
 | `web/` | The project's GitHub Pages site. `pay.html` hands a UPI request to the payer's app, and the app links to the published copy by default. A push to `main` that touches `web/` republishes it |
 | `tools/` | PowerShell helpers for pairing and reconnecting on Windows |
 | `docs/` | How it works, and the images the README uses |
@@ -62,15 +64,22 @@ These exist because the work touches someone's own watch and phone.
   be shared) and `NdefTagService.java` (the NFC side).
   [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md) explains the parts that are not
   obvious from the code.
-- Build with `watch-app/build.ps1`. It needs Windows, a JDK 11 or newer, and it
-  downloads Android build-tools 35 and platform 35 from Google on first run,
-  checked against Google's checksums. There is no build script for macOS or
-  Linux yet. Say so if the user is on one.
+- Build with `watch-app/build.ps1` on Windows or `watch-app/build.sh` on macOS
+  and Linux. Either needs a JDK 11 or newer, and downloads Android build-tools
+  35, platform 35 and the libraries in `libraries.txt` on first run, checked
+  against their checksums. Keep the two scripts doing the same steps.
 - A build installs to the first connected device that reports itself as a
-  watch. Pass `-NoInstall` to build only.
-- There are no automated tests. Verify on a real watch: read the log, take a
-  screenshot, and have the user tap a phone. Don't report a change as working
-  from a successful compile alone.
+  watch. Pass `-NoInstall` (`--no-install` for `build.sh`) to build only.
+- A build also overwrites `skill/tapdrop-watch/assets/tapdrop.apk`, signed with
+  that computer's debug key. Don't commit that APK from a different computer
+  than the last one that built it: installs of the old one could not update.
+- `watch-app/tests/test_emulator.py` tests the tile and the Quick tap page on a
+  Wear OS emulator: build with `--debuggable --no-install` (`-Debuggable
+  -NoInstall`), then run it with Python. It refuses real watches, since each
+  test empties the app, and puts the emulator's TapDrop data back afterwards.
+- Nothing automated covers NFC, since the emulator has none. Verify that on a
+  real watch: read the log, take a screenshot, and have the user tap a phone.
+  Don't report a change as working from a successful compile alone.
 - The app ID is `dev.tapdrop`. Don't change it: an installed app cannot be
   updated across an ID change.
 

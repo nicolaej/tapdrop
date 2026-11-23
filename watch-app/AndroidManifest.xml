@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="dev.tapdrop"
-    android:versionCode="4"
-    android:versionName="0.3.1">
+    android:versionCode="5"
+    android:versionName="0.4.0">
 
     <uses-permission android:name="android.permission.NFC" />
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -11,6 +11,14 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+
+    <!-- Copied from the AndroidX tiles library's manifest, since there is no manifest merger:
+         lets TileService.getUpdater() find the tile host to ask for a redraw. -->
+    <queries>
+        <intent>
+            <action android:name="androidx.wear.tiles.action.BIND_UPDATE_REQUESTER" />
+        </intent>
+    </queries>
 
     <uses-feature android:name="android.hardware.type.watch" />
     <uses-feature android:name="android.hardware.nfc.hce" android:required="true" />
@@ -27,6 +35,9 @@
             android:name="com.google.android.wearable.standalone"
             android:value="true" />
 
+        <!-- Also from the tiles library: newer tile hosts are reached through it when present. -->
+        <uses-library android:name="wear-sdk" android:required="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -40,7 +51,30 @@
         <activity android:name=".ShareActivity" android:exported="false" />
         <activity android:name=".EditActivity" android:exported="false" />
         <activity android:name=".LearnActivity" android:exported="false" />
-        <activity android:name=".OneTapActivity" android:exported="false" />
+        <!-- The Quick tap page. Exported so the tile host can open it when the tile is tapped.
+             The tile opens it as a new task, and the empty affinity keeps that task apart from
+             the app's own, so Back returns to the tile instead of to whichever TapDrop screen
+             was left open. Opened from the home list, it stays in the app's task as before. -->
+        <activity
+            android:name=".OneTapActivity"
+            android:exported="true"
+            android:taskAffinity=""
+            android:excludeFromRecents="true" />
+
+        <service
+            android:name=".TapDropTileService"
+            android:label="@string/quick_tap_tile_name"
+            android:description="@string/quick_tap_tile_description"
+            android:icon="@mipmap/ic_launcher"
+            android:exported="true"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
+            <intent-filter>
+                <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
+            </intent-filter>
+            <meta-data
+                android:name="androidx.wear.tiles.PREVIEW"
+                android:resource="@mipmap/ic_launcher" />
+        </service>
 
         <!-- Answers NFC readers as an NFC Forum Type 4 tag holding one NDEF record. -->
         <service

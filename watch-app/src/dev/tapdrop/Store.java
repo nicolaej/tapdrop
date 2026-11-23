@@ -62,11 +62,13 @@ final class Store {
             if (items.get(i).id.equals(item.id)) {
                 items.set(i, item);
                 save(c, items);
+                TapDropTileService.refresh(c);
                 return;
             }
         }
         items.add(item);
         save(c, items);
+        TapDropTileService.refresh(c);
     }
 
     static void delete(Context c, String id) {
@@ -78,6 +80,7 @@ final class Store {
             }
         }
         save(c, items);
+        TapDropTileService.refresh(c);
     }
 
     static String newId() {
@@ -108,6 +111,7 @@ final class Store {
 
     static void setQuick(Context c, String id) {
         prefs(c).edit().putString(KEY_QUICK, id).commit();
+        TapDropTileService.refresh(c);
     }
 
     /**

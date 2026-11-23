@@ -19,13 +19,16 @@ we have none of.
 ## Changing the code
 
 - The app is in `watch-app/src/dev/tapdrop/`. It uses plain Java and Android
-  framework classes only. Please keep it that way: no Gradle and no libraries
-  is what keeps the build to one script and the APK tiny.
+  framework classes, plus the AndroidX Tiles libraries the tile cannot do
+  without. Please keep it that way: no Gradle, and no library beyond those
+  pinned in `watch-app/libraries.txt`, is what keeps the build to one script.
 - [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md) explains the NFC side.
-- Build with `watch-app/build.ps1` on Windows. A build script for macOS and
-  Linux would be a welcome contribution.
-- There are no automated tests. Say in your pull request what you checked on a
-  real watch, and what you could not check.
+- Build with `watch-app/build.ps1` on Windows or `watch-app/build.sh` on macOS
+  and Linux. A change to one should be made to the other.
+- Run `watch-app/tests/test_emulator.py` on a Wear OS emulator if you touch the
+  tile or the Quick tap page (how to run it is at the top of the file). NFC has
+  no automated tests: say in your pull request what you checked on a real
+  watch, and what you could not check.
 - If you change how setup works, update
   `skill/tapdrop-watch/SKILL.md` in the same pull request. Coding assistants
   follow that file, so it has to stay true.

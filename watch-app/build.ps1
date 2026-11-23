@@ -1,6 +1,8 @@
 # Builds the TapDrop test app without Gradle and installs it on the watch.
-# Usage: powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1 [-NoInstall]
-param([switch]$NoInstall)
+# Usage: powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1 [-NoInstall] [-Debuggable]
+#   -Debuggable  a build the tests in tests\ can drive (they read and write its
+#                settings); it is not copied into skill\
+param([switch]$NoInstall, [switch]$Debuggable)
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
@@ -60,22 +62,64 @@ function Get-SdkPackage($file, $sha1, $target) {
 Get-SdkPackage 'build-tools_r35_windows.zip' 'af059bb67cf7786f45ee0db85e2d24985df1b4b6' $bt
 Get-SdkPackage 'platform-35_r02.zip'         '0bb560a90a7a2cbd0dd8348224d518b638fe7949' $platform
 
+# Fetches the libraries in libraries.txt into .libs, checked against their SHA-256,
+# and keeps the class jar of each (an .aar holds it as classes.jar).
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$libDir = Join-Path $root '.libs'
+$libs = @()
+foreach ($line in Get-Content (Join-Path $root 'libraries.txt')) {
+    if ($line -match '^\s*(#|$)') { continue }
+    $url, $sha256 = -split $line
+    $name = Split-Path $url -Leaf
+    $jar = Join-Path $libDir ([IO.Path]::GetFileNameWithoutExtension($name) + '.jar')
+    if (-not (Test-Path $jar)) {
+        New-Item -ItemType Directory -Force -Path $libDir | Out-Null
+        $file = Join-Path $env:TEMP ("lib-" + [guid]::NewGuid().ToString('N').Substring(0, 8) + "-$name")
+        Write-Host "Downloading $name ..." -ForegroundColor Cyan
+        Invoke-WebRequest -Uri $url -OutFile $file -UseBasicParsing
+        $got = (Get-FileHash $file -Algorithm SHA256).Hash.ToLower()
+        if ($got -ne $sha256) { Remove-Item $file; throw "Checksum mismatch for $name (got $got)" }
+        if ($name.EndsWith('.aar')) {
+            $zip = [IO.Compression.ZipFile]::OpenRead($file)
+            try {
+                [IO.Compression.ZipFileExtensions]::ExtractToFile($zip.GetEntry('classes.jar'), "$jar.part", $true)
+            } finally { $zip.Dispose() }
+        } else {
+            Copy-Item $file "$jar.part"
+        }
+        Move-Item "$jar.part" $jar -Force
+        Remove-Item $file
+    }
+    $libs += $jar
+}
+$classpath = (@($androidJar) + $libs) -join ';'
+
 $b = Join-Path $root 'build'
 if (Test-Path $b) { Remove-Item $b -Recurse -Force }
 foreach ($d in 'gen', 'classes', 'dex') { New-Item -ItemType Directory -Force -Path (Join-Path $b $d) | Out-Null }
 
 Write-Host "Compiling resources..." -ForegroundColor Cyan
 & "$bt\aapt2.exe" compile --dir "$root\res" -o "$b\res.zip"; Assert-Ok 'aapt2 compile'
-& "$bt\aapt2.exe" link -o "$b\base.apk" -I $androidJar --manifest "$root\AndroidManifest.xml" `
-    --java "$b\gen" --min-sdk-version 30 --target-sdk-version 34 "$b\res.zip"; Assert-Ok 'aapt2 link'
+$debugMode = @(); if ($Debuggable) { $debugMode = @('--debug-mode') }
+& "$bt\aapt2.exe" link -o "$b\base.apk" -I $androidJar --manifest "$root\AndroidManifest.xml" @debugMode `
+    --java "$b\gen" --proguard "$b\aapt-rules.pro" --min-sdk-version 30 --target-sdk-version 34 "$b\res.zip"; Assert-Ok 'aapt2 link'
 
 Write-Host "Compiling Java..." -ForegroundColor Cyan
 $sources = @(Get-ChildItem "$root\src", "$b\gen" -Recurse -Filter *.java | ForEach-Object { $_.FullName })
-& "$jdk\bin\javac.exe" --release 11 -encoding UTF-8 -classpath $androidJar -d "$b\classes" $sources; Assert-Ok 'javac'
+& "$jdk\bin\javac.exe" --release 11 -encoding UTF-8 -classpath $classpath -d "$b\classes" $sources; Assert-Ok 'javac'
 
-Write-Host "Converting to dex..." -ForegroundColor Cyan
+Write-Host "Shrinking and converting to dex..." -ForegroundColor Cyan
 & "$jdk\bin\jar.exe" cf "$b\classes.jar" -C "$b\classes" .; Assert-Ok 'jar'
-& "$bt\d8.bat" --lib $androidJar --min-api 30 --output "$b\dex" "$b\classes.jar"; Assert-Ok 'd8'
+# R8 keeps only the code reachable from the manifest's components (the rules aapt2
+# wrote) and proguard.pro. Its warnings about Kotlin metadata are expected, so its
+# output goes to build\r8.log and is shown only if it fails.
+$ErrorActionPreference = 'Continue'     # else Windows PowerShell stops on R8's first warning
+& "$jdk\bin\java.exe" -cp "$bt\lib\d8.jar" com.android.tools.r8.R8 --release --min-api 30 --lib $androidJar `
+    --pg-conf "$b\aapt-rules.pro" --pg-conf "$root\proguard.pro" --output "$b\dex" `
+    "$b\classes.jar" $libs *> "$b\r8.log"
+$r8Exit = $LASTEXITCODE
+$ErrorActionPreference = 'Stop'
+if ($r8Exit -ne 0) { Get-Content "$b\r8.log" | Write-Host; throw "R8 failed with exit code $r8Exit" }
 
 Write-Host "Packaging and signing..." -ForegroundColor Cyan
 Copy-Item "$b\base.apk" "$b\unsigned.apk"
@@ -96,7 +140,7 @@ Write-Host "Built $apk" -ForegroundColor Green
 # Keep the copies bundled with the shareable skill in step with the source.
 $repo = Split-Path $root
 $skill = Join-Path $repo 'skill\tapdrop-watch'
-if (Test-Path $skill) {
+if ((Test-Path $skill) -and -not $Debuggable) {
     $assets = Join-Path $skill 'assets'
     New-Item -ItemType Directory -Force -Path $assets | Out-Null
     Copy-Item $apk (Join-Path $assets 'tapdrop.apk') -Force

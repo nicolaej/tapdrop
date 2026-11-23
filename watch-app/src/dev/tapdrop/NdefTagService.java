@@ -114,6 +114,7 @@ public class NdefTagService extends HostApduService {
                 if (idle) {                      // no share screen to do it, so confirm from here
                     Vibrator v = (Vibrator) getSystemService(VIBRATOR_SERVICE);
                     if (v != null) v.vibrate(VibrationEffect.createWaveform(new long[] {0, 35, 70, 55}, -1));
+                    TapDropTileService.sent(this);
                 }
             }
             return out;
@@ -162,7 +163,7 @@ public class NdefTagService extends HostApduService {
         idle = id == null;
         if (idle) id = Store.quick(this);
         Item item = Store.find(this, id);
-        if (item != null && idle) Log.d(TAG, "no share screen open, answering with the quick-tap item");
+        if (item != null && idle) Log.d(TAG, "no share screen open, answering with the quick-tap item id=" + id);
         byte[] message = item == null ? null : Kinds.record(this, item, fix);
         if (message == null || message.length + 2 > MAX_FILE) {
             Log.d(TAG, item == null ? "nothing to share yet, not answering"

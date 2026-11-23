@@ -204,11 +204,12 @@ To remove everything: `python scripts/watch.py uninstall`.
   in two taps. The first tap opens Samsung's "Select an app to use" screen. The
   wearer picks **TapDrop tag** and the phone taps again. The watch then sends
   the quick-tap item. The user picks it on the **Quick tap** screen, the last
-  row of TapDrop's home list: any of their items, or "Nothing". Until they
-  choose, it is the first item in the list. Tell them which item that is, since
-  it goes out without the app showing it first.
-- They will then ask for one tap. On a Samsung watch, the same Quick tap screen
-  has **One-tap sharing**. Turning it on switches off Samsung Health's NFC tag
+  row of TapDrop's home list, also opened by tapping the TapDrop tile: any of
+  their items, or "Nothing". Until
+  they choose, it is the first item in the list. Tell them which item that is,
+  since it goes out without the app showing it first.
+- They will then ask for one tap. On a Samsung watch, the Quick tap screen
+  leads to **One-tap sharing**. Turning it on switches off Samsung Health's NFC tag
   service, so TapDrop is the only app left to answer, with the app closed and
   with the display asleep. Explain the two costs before they decide: Samsung
   Health's NFC feature for gym machines stops working, and their quick-tap item

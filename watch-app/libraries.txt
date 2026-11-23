@@ -1,0 +1,18 @@
+# Libraries compiled into the app, read by build.ps1 and build.sh. Each line is a
+# download URL and its SHA-256; a build stops if a download does not match.
+#
+# The Wear OS tile needs AndroidX Tiles and ProtoLayout: tiles are drawn by the
+# system from a layout the app describes, and these libraries are the only
+# supported way to describe one. Only the parts the tile uses are listed, not
+# the full Gradle dependency tree (no material3, renderer or androidx.core).
+# Their manifests add nothing beyond what AndroidManifest.xml already copies.
+
+https://dl.google.com/dl/android/maven2/androidx/wear/tiles/tiles/1.6.2/tiles-1.6.2.aar f112ba152c268915dd5352c6e52319fae15f3002b46860d56fb7b9b82bf8111c
+https://dl.google.com/dl/android/maven2/androidx/wear/tiles/tiles-proto/1.6.2/tiles-proto-1.6.2.jar f76451ebb4afb181a5d9a3bb60fe94e307081257440f18eba22b334872216c4f
+https://dl.google.com/dl/android/maven2/androidx/wear/protolayout/protolayout/1.4.2/protolayout-1.4.2.aar 3210d7aae1b81d79ca51f068bcc0a5c0b5308b64aa9e6634ed6ccd302eeb2e17
+https://dl.google.com/dl/android/maven2/androidx/wear/protolayout/protolayout-expression/1.4.2/protolayout-expression-1.4.2.aar aebe7375bf5c281f51e5eb07a6e8b9d647af055cd4eae60925b71a1db364fb00
+https://dl.google.com/dl/android/maven2/androidx/wear/protolayout/protolayout-proto/1.4.2/protolayout-proto-1.4.2.jar 4f2a4cc8184526950eb4d11c055cdc1461cd5d6d9b882c120f83521867ea64e8
+https://dl.google.com/dl/android/maven2/androidx/wear/protolayout/protolayout-external-protobuf/1.4.2/protolayout-external-protobuf-1.4.2.jar 06a49093bfb0b236d9bbdeea4c227f642370d9ebf173a84a6636900c7b152e3a
+https://dl.google.com/dl/android/maven2/androidx/concurrent/concurrent-futures/1.1.0/concurrent-futures-1.1.0.jar 0ce067c514a0d1049d1bebdf709e344ed3266fe9744275682937cdcb13334e9e
+https://repo1.maven.org/maven2/com/google/guava/listenablefuture/1.0/listenablefuture-1.0.jar e4ad7607e5c0477c6f890ef26a49cb8d1bb4dffb650bab4502afee64644e3069
+https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/2.1.20/kotlin-stdlib-2.1.20.jar 1bcc74e8ce84e2c25eaafde10f1248349cce3062b6e36978cbeec610db1e930a

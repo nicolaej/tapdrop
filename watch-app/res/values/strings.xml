@@ -3,4 +3,6 @@
     <string name="app_name">TapDrop</string>
     <string name="service_desc">TapDrop tag</string>
     <string name="aid_desc">Share a link by tapping</string>
+    <string name="quick_tap_tile_name">TapDrop</string>
+    <string name="quick_tap_tile_description">Shows what TapDrop shares when closed</string>
 </resources>

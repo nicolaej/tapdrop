@@ -94,6 +94,12 @@ Opening an item and tapping is the fast path: one tap. You don't have to open th
 use". Pick **TapDrop tag** and tap the phone again. The watch sends your quick-tap item. Choose
 which item that is, or "Nothing", on the Quick tap screen at the bottom of the home list.
 
+**The TapDrop tile** shows your quick-tap item, with its icon, in the watch's tile carousel. Add it
+from the tile editor, then tap it to open the Quick tap screen and pick another. Like an item's
+share screen, it sends rings out to the edge while it is ready to answer a phone, and shows a tick
+and "Sent" when a phone has read the item. The tile only shows and opens the choice. It cannot switch NFC on, since Android lets only system apps do
+that, so NFC still has to be on in the watch's settings.
+
 The second tap exists because Samsung Health answers the same NFC tag ID as TapDrop, so the watch
 asks which you meant. It also means a passing phone gets nothing unless you pick TapDrop on your own
 wrist.
@@ -222,10 +228,21 @@ Setup uses a prebuilt app, so most people never need this. To build your own:
 powershell -NoProfile -ExecutionPolicy Bypass -File watch-app\build.ps1
 ```
 
-It needs Windows and a JDK 11 or newer. On first run it downloads Android build-tools 35 and
-platform 35 from Google and checks them against Google's published checksums. There is no Gradle
-and there are no dependencies: the script calls the Android tools directly, and the app uses only
-framework classes. It installs to the connected watch, or pass `-NoInstall`.
+On macOS or Linux:
+
+```sh
+watch-app/build.sh
+```
+
+Either needs a JDK 11 or newer. On first run it downloads Android build-tools 35 and platform 35
+from Google and checks them against Google's published checksums. There is no Gradle: the script
+calls the Android tools directly. The only libraries are the AndroidX ones the tile needs, pinned
+in `watch-app/libraries.txt` with their SHA-256 and checked the same way. R8, which ships with
+build-tools, drops the parts the app never uses, so the APK is about 220 KB instead of 50 KB. It installs to the connected watch, or pass `-NoInstall` (`--no-install`
+for `build.sh`).
+
+A build signs with a debug key it creates beside the source, so an app built on one computer
+cannot update one built on another. Uninstall TapDrop from the watch first.
 
 | Path | What it is |
 |---|---|

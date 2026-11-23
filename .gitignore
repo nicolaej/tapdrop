@@ -1,5 +1,7 @@
 # Build output
 build/
+# Libraries downloaded by the build scripts, from watch-app/libraries.txt
+.libs/
 dist/
 __pycache__/
 
